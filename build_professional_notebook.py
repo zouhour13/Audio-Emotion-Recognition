@@ -174,6 +174,7 @@ All datasets are reduced to the same six-label taxonomy. Calm and surprise are i
 code('''RAV_MAP={"01":"neutral","03":"happy","04":"sad","05":"angry","06":"fear","07":"disgust"}
 CREMA_MAP={"ANG":"angry","DIS":"disgust","FEA":"fear","HAP":"happy","NEU":"neutral","SAD":"sad"}
 TESS_MAP={"angry":"angry","disgust":"disgust","fear":"fear","happy":"happy","neutral":"neutral","sad":"sad"}
+TESS_SPEAKERS={"OAF","YAF"}  # The two canonical TESS actresses.
 SAVEE_MAP={"a":"angry","d":"disgust","f":"fear","h":"happy","n":"neutral","sa":"sad"}
 
 def record(path, dataset, speaker, sex, emotion):
@@ -201,7 +202,10 @@ def parse_tess(root):
     rows=[]
     for p in root.rglob("*.wav"):
         token=p.stem.split("_")[-1].lower(); speaker=p.stem.split("_")[0].upper()
-        if token in TESS_MAP: rows.append(record(p,"tess",speaker,"female",TESS_MAP[token]))
+        # Kaggle mirrors may contain a nested copy or unrelated WAVs. Only the
+        # official OAF/YAF TESS speakers belong in this two-speaker corpus.
+        if speaker in TESS_SPEAKERS and token in TESS_MAP:
+            rows.append(record(p,"tess",speaker,"female",TESS_MAP[token]))
     return rows
 
 def parse_savee(root):

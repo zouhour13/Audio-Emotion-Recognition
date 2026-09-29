@@ -30,7 +30,7 @@ ROOT = Path(__file__).resolve().parent
 
 
 def load_definitions(notebook, namespace):
-    names = {"RAV_MAP", "CREMA_MAP", "TESS_MAP", "SAVEE_MAP", "FEATURE_SETS"}
+    names = {"RAV_MAP", "CREMA_MAP", "TESS_MAP", "TESS_SPEAKERS", "SAVEE_MAP", "FEATURE_SETS"}
     for cell in notebook.cells:
         if cell.cell_type != "code":
             continue
@@ -101,6 +101,8 @@ def check_manifest(namespace, root):
     for actor in ("OAF", "YAF"):
         for emotion in namespace["TESS_MAP"]:
             (roots["tess"] / f"{actor}_back_{emotion}.wav").touch()
+    for emotion in namespace["TESS_MAP"]:
+        (roots["tess"] / f"MIRROR_back_{emotion}.wav").touch()
     for actor in ("DC", "JE", "JK", "KL"):
         for code in namespace["SAVEE_MAP"]:
             (roots["savee"] / f"{actor}_{code}01.wav").touch()
@@ -111,6 +113,8 @@ def check_manifest(namespace, root):
     assert split.groupby("speaker_id").split.nunique().max() == 1
     assert split.groupby("source_id").split.nunique().max() == 1
     assert set(split.loc[split.dataset == "tess", "split"]) == {"train", "test"}
+    assert set(namespace["TESS_SPEAKERS"]) == {"OAF", "YAF"}
+    assert not any(row["speaker_id"] == "tess:MIRROR" for row in namespace["parse_tess"](roots["tess"]))
     savee_folder = roots["savee"] / "DC"
     savee_folder.mkdir()
     (savee_folder / "sa02.wav").touch()

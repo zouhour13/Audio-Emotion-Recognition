@@ -72,6 +72,14 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("layers.Bidirectional", model_code)
         self.assertTrue(synced)
 
+        tess_speakers = ast.literal_eval(next(
+            node.value for tree in [code_tree(cell_source(cell)) for cell in cells if cell["cell_type"] == "code"]
+            for node in tree.body
+            if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "TESS_SPEAKERS"
+                                                    for target in node.targets)
+        ))
+        self.assertEqual(tess_speakers, {"OAF", "YAF"})
+
     def test_deterministic_generation_and_read_only_freshness_check(self):
         changed = generate(self.root)
         self.assertIn("docs/PROJECT_GUIDE.md", changed)
