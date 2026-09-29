@@ -1,0 +1,36 @@
+# Local environments and generated caches
+.verify-venv/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Credentials
+.env
+.env.*
+!.env.example
+kaggle.json
+**/kaggle.json
+
+# Corpora and model binaries are not part of the source repository
+data/
+cache/
+artifacts/
+ser_project/
+*.keras
+*.h5
+*.hdf5
+*.joblib
+*.npz
+*.wav
+*.flac
+*.ogg
+
+# Historical local work is preserved but not published
+archive/
+3datasets_final_copy*.ipynb
+emotion-recognition-svm.ipynb
+features.csv
+features i can use.txt
