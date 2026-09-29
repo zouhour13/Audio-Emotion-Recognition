@@ -91,6 +91,13 @@ def model_title(name):
     return {"lstm": "LSTM", "bilstm": "BiLSTM", "cnn_bilstm": "CNN-BiLSTM"}.get(name, name)
 
 
+def result_number(row, field):
+    try:
+        return float(row[field])
+    except (ValueError, TypeError):
+        raise ValueError(f"Missing or invalid numeric result: {field}") from None
+
+
 def result_table(root, models):
     path = root / "results" / "model_comparison.csv"
     rows = None
@@ -105,11 +112,11 @@ def result_table(root, models):
             raise ValueError("Results must contain exactly one row for every compared model")
         for row in rows:
             for field in ("parameters", "best_epoch"):
-                number = float(row[field])
+                number = result_number(row, field)
                 if not math.isfinite(number) or not number.is_integer() or number <= 0:
                     raise ValueError(f"Invalid positive integer in results: {field}")
             for field in METRICS:
-                number = float(row[field])
+                number = result_number(row, field)
                 if not math.isfinite(number) or not 0 <= number <= 1:
                     raise ValueError(f"Invalid metric in results: {field}; expected a fraction in [0, 1]")
     lines = ["| Model | Parameters | Best epoch | Val accuracy | Val macro F1 | Test accuracy | Test macro F1 | Test weighted F1 |",
@@ -194,6 +201,8 @@ variables before importing and authenticating `KaggleApi`. A missing or denied C
 a clear error instead of falling back to stale credentials. No local `kaggle.json` is required.
 Only outside Colab is an explicitly configured environment-variable fallback supported.
 Never put credentials in notebook outputs, commits, or documentation.
+If `jedi` is missing after a Colab reconnect, the imports cell installs that IPython dependency
+once into the active runtime and verifies it. Any other project dependency conflict still fails.
 
 ### Initial Installation Cell
 

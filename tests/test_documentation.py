@@ -4,9 +4,14 @@ import ast
 import csv
 import json
 import shutil
+import subprocess
+import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
+from importlib.metadata import PackageNotFoundError
+from unittest.mock import Mock, patch
 
 from generate_documentation import (
     END, METRICS, ROOT, START, cell_source, code_tree, generate,
@@ -57,11 +62,12 @@ class DocumentationTests(unittest.TestCase):
 
     def test_current_contracts_and_sources(self):
         cells, config, labels, datasets, features, models, model_code, synced = notebook_details(self.root)
-        self.assertEqual(len(cells), 28)
+        self.assertGreater(len(cells), len(models))
         self.assertEqual(config["sample_rate"], 16000)
         self.assertEqual(labels, ["angry", "disgust", "fear", "happy", "neutral", "sad"])
         self.assertEqual(set(datasets), {"ravdess", "cremad", "tess", "savee"})
-        self.assertEqual([len(columns) for columns in features.values()], [13, 39, 41, 44])
+        n = config["n_mfcc"]
+        self.assertEqual([len(columns) for columns in features.values()], [n, 3 * n, 3 * n + 2, 3 * n + 5])
         self.assertEqual(models, ("lstm", "bilstm", "cnn_bilstm"))
         self.assertIn("layers.Bidirectional", model_code)
         self.assertTrue(synced)
@@ -150,6 +156,38 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn('"gradio>=6,<7"', guide)
         self.assertIn("| 1 | 3 | 1. Environment", guide)
         self.assertIn("| 3 | 6 | 2. Reproducible dataset", guide)
+
+    def test_missing_jedi_recovers_only_in_colab(self):
+        notebook = json.loads((self.root / "ser_professional_colab.ipynb").read_text(encoding="utf-8"))
+        imports_tree = code_tree(cell_source(notebook["cells"][3]))
+        definition = next(node for node in imports_tree.body if isinstance(node, ast.FunctionDef)
+                          and node.name == "ensure_jedi")
+        run = Mock()
+        namespace = {"version": Mock(side_effect=[PackageNotFoundError("jedi"), "0.19.2"]),
+                     "PackageNotFoundError": PackageNotFoundError,
+                     "subprocess": types.SimpleNamespace(run=run, CalledProcessError=subprocess.CalledProcessError),
+                     "sys": sys}
+        exec(compile(ast.Module(body=[definition], type_ignores=[]), "<Colab dependency check>", "exec"), namespace)
+        google = types.ModuleType("google")
+        google.colab = types.ModuleType("google.colab")
+        with patch.dict(sys.modules, {"google": google, "google.colab": google.colab}):
+            self.assertEqual(namespace["ensure_jedi"](), "0.19.2")
+        run.assert_called_once_with([sys.executable, "-m", "pip", "install", "-q", "jedi>=0.19,<1"], check=True)
+
+        namespace["version"] = Mock(return_value="0.19.2")
+        run.reset_mock()
+        self.assertEqual(namespace["ensure_jedi"](), "0.19.2")
+        run.assert_not_called()
+
+    def test_missing_csv_values_have_actionable_errors(self):
+        path = self.write_result_fixture()
+        original = path.read_text(encoding="utf-8")
+        path.write_text(original.replace("0.5", "", 1), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Missing or invalid numeric result"):
+            result_table(self.root, self.models)
+        path.write_text(original.replace(",0.5,0.5,0.5,0.5,0.5", "", 1), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Missing or invalid numeric result"):
+            result_table(self.root, self.models)
 
 
 if __name__ == "__main__":

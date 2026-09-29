@@ -40,6 +40,8 @@ The notebook can also use already-extracted dataset folders by changing `DATA_RO
 
 The imports cell checks the project's dependency tree and reports real mismatches. A global `pip check` can additionally report conflicts among unrelated packages that Colab preinstalls; those should be assessed rather than interpreted as proof that all project imports work. The setup includes `jedi`, which some Colab IPython environments need.
 
+If Colab reconnects to a runtime that lacks `jedi`, the imports cell installs that one missing IPython dependency into the active kernel and rechecks it. Other dependency problems still fail visibly. Rerun the package setup cell first if installation cannot complete.
+
 Corpus validation requires all four datasets and the expected speaker counts. It removes duplicate source recordings in mirrors and saves the exact split manifest. Cached features are keyed by the manifest, file metadata, seed, audio configuration, and feature-library versions; interrupted cache writes are not reused. Audio preprocessing and model forward-pass checks run before their respective expensive stages.
 
 For local checks without dataset downloads or training, run `python verify_professional_notebook.py` in an environment with NumPy, pandas, librosa, soundfile, scikit-learn, Gradio, and nbformat. Add `nbformat>=5.10,<6` only to that verification environment. These checks do not establish model performance or CUDA compatibility.

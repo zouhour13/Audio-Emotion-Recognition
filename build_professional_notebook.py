@@ -22,7 +22,7 @@ Use a Colab GPU runtime. Secrets are read from Colab Secrets; no credentials are
 code('''# Keep Colab's GPU-matched TensorFlow/NumPy scientific stack.
 %pip install -q --upgrade "librosa>=0.10.2,<0.12" "soundfile>=0.12,<0.14" "gradio>=6,<7" "kaggle>=1.6,<2" "joblib>=1.4,<2" "tqdm>=4.66,<5" "jedi>=0.19,<1"
 '''),
-code('''import os, re, json, random, shutil, warnings, hashlib, gc
+code('''import os, re, json, random, shutil, warnings, hashlib, gc, subprocess, sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
 import joblib, librosa, numpy as np, pandas as pd, seaborn as sns
@@ -41,6 +41,26 @@ from importlib.metadata import version, requires, PackageNotFoundError
 from packaging.version import Version
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
+
+def ensure_jedi():
+    try:
+        return version("jedi")
+    except PackageNotFoundError:
+        pass
+    try:
+        from google import colab
+    except ImportError:
+        raise RuntimeError("IPython requires jedi. Run the package setup cell before imports.") from None
+    print("Installing missing IPython dependency in this Colab runtime: jedi")
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "jedi>=0.19,<1"], check=True)
+        installed = version("jedi")
+    except (subprocess.CalledProcessError, PackageNotFoundError):
+        raise RuntimeError("Could not install jedi. Rerun the package setup cell, then restart the runtime if Colab requests it.") from None
+    print("Installed jedi", installed)
+    return installed
+
+ensure_jedi()
 
 def verify_environment():
     queue = ["tensorflow", "librosa", "soundfile", "scikit-learn", "pandas",
@@ -591,7 +611,7 @@ notebook = {
     "nbformat_minor": 5,
 }
 for index, cell in enumerate(cells): cell["id"] = f"ser-cell-{index:02d}"
-(Path(__file__).resolve().parent/"ser_professional_colab.ipynb").write_text(json.dumps(notebook, indent=1), encoding="utf-8")
+(Path(__file__).resolve().parent/"ser_professional_colab.ipynb").write_text(json.dumps(notebook, indent=1), encoding="utf-8", newline="\n")
 print(f"Wrote ser_professional_colab.ipynb with {len(cells)} cells")
 
 from generate_documentation import generate
