@@ -13,7 +13,7 @@ Documentation generation does not perform training, validate CUDA, or certify mo
 See [results](RESULTS.md) for the current publication status.
 
 Notebook and Python generator sources: **in sync**.
-Source fingerprint: `dc4d778025480d52`. This is a freshness identifier, not an experiment ID.
+Source fingerprint: `cc18f9944af011bb`. This is a freshness identifier, not an experiment ID.
 
 ## Colab Setup
 
@@ -103,8 +103,6 @@ Both sexes and all valid CREMA-D intensity levels are retained. Calm and surpris
 to harmonize the six labels. The manifest records path, dataset, dataset-prefixed speaker ID,
 sex, emotion, source ID, and split. Duplicate source recordings from mirrors are removed.
 Expected speaker counts are RAVDESS 24, CREMA-D 91, TESS 2, and SAVEE 4.
-TESS accepts only its two canonical actresses, `OAF` and `YAF`; extra mirror folders or WAVs
-are excluded before the manifest is built, rather than treated as additional speakers.
 
 Original recordings are split before augmentation or feature extraction. Larger corpora target
 70/15/15 speaker partitions. SAVEE assigns 2/1/1 speakers. TESS assigns one speaker to training,
